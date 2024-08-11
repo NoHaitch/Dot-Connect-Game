@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -14,14 +13,13 @@ var db *sql.DB
 // If there is no database then it creates a new one.
 func initDB() {
 	var err error
-	// Open (or create) the database file
 	db, err = sql.Open("sqlite3", "./game_data.db")
 	if err != nil {
-		log.Fatal(err)
+		PrintlnRed("[Main] DATABASE ERROR: " + err.Error())
 	}
 
 	// Create users table if it does not exist
-	tableCreationSQL := `
+	userTableCreationSQL := `
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
@@ -29,21 +27,35 @@ func initDB() {
         highscore INTEGER DEFAULT 0
     );
     `
-
-	_, err = db.Exec(tableCreationSQL)
+	_, err = db.Exec(userTableCreationSQL)
 	if err != nil {
-		log.Fatal(err)
+		PrintlnRed("[Main] DATABASE ERROR: " + err.Error())
+	}
+
+	// Create history table if it does not exist
+	historyTableCreationSQL := `
+    CREATE TABLE IF NOT EXISTS history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        mode TEXT NOT NULL,
+        level INTEGER NOT NULL,
+        score INTEGER NOT NULL,
+        FOREIGN KEY(username) REFERENCES users(username)
+    );
+    `
+	_, err = db.Exec(historyTableCreationSQL)
+	if err != nil {
+		PrintlnRed("[Main] DATABASE ERROR: " + err.Error())
 	}
 }
 
-// Register a new user.
-// Return True if registration succeeded false otherwise.
+// Register function to add a new user
 func register(username, password string) bool {
 	var exists bool
 	row := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)`, username)
 	err := row.Scan(&exists)
 	if err != nil {
-		log.Println("Error checking username:", err)
+		PrintlnRed("[Main] Error Checking Username: " + err.Error())
 		return false
 	}
 
@@ -54,25 +66,88 @@ func register(username, password string) bool {
 	// Insert the new user
 	_, err = db.Exec(`INSERT INTO users (username, password, highscore) VALUES (?, ?, ?)`, username, password, 0)
 	if err != nil {
-		log.Println("Error inserting new user:", err)
+		PrintlnRed("[Main] Error Inserting Username: " + err.Error())
 		return false
 	}
 
 	return true
 }
 
-// Update the highscore for an existing user.
-// Return True if update succeeded false otherwise.
+// UpdateHighscore function to update the highscore for an existing user
 func updateHighscore(username string, highscore int) bool {
 	_, err := db.Exec(`UPDATE users SET highscore = ? WHERE username = ?`, highscore, username)
 	if err != nil {
-		log.Println("Error updating highscore:", err)
+		PrintlnRed("[Main] Error Updating Highscore: " + err.Error())
 		return false
 	}
 	return true
 }
 
+// AddGameHistory function to add a new game record to the history table
+func addGameHistory(username, mode string, level, score int) bool {
+	// Check if the username exists
+	var exists bool
+	row := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)`, username)
+	err := row.Scan(&exists)
+	if err != nil {
+		PrintlnRed("[Main] Error Checking Username: " + err.Error())
+		return false
+	}
+
+	if !exists {
+		PrintlnRed("[Main] Username not found: " + username)
+		return false
+	}
+
+	// Insert the new game history
+	_, err = db.Exec(`INSERT INTO history (username, mode, level, score) VALUES (?, ?, ?, ?)`, username, mode, level, score)
+	if err != nil {
+		PrintlnRed("[Main] Error Inserting Game History: " + err.Error())
+		return false
+	}
+
+	// Update highscore if the new score is higher
+	// Retrieve the current highscore
+	var currentHighscore int
+	row = db.QueryRow(`SELECT highscore FROM users WHERE username = ?`, username)
+	err = row.Scan(&currentHighscore)
+	if err != nil {
+		PrintlnRed("[Main] Error Retrieving Highscore: " + err.Error())
+		return false
+	}
+
+	if score > currentHighscore {
+		return updateHighscore(username, score)
+	}
+
+	return true
+}
+
+// Get the top 5 users with the highest scores
+func getLeaderboard() ([]map[string]interface{}, error) {
+	rows, err := db.Query(`SELECT username, highscore FROM users ORDER BY highscore DESC LIMIT 5`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var leaderboard []map[string]interface{}
+	for rows.Next() {
+		var username string
+		var highscore int
+		if err := rows.Scan(&username, &highscore); err != nil {
+			return nil, err
+		}
+		leaderboard = append(leaderboard, map[string]interface{}{
+			"username":  username,
+			"highscore": highscore,
+		})
+	}
+
+	return leaderboard, nil
+}
+
 func init() {
-	// Initialize database connection and ensure table exists
+	// Initialize database connection and ensure tables exist
 	initDB()
 }

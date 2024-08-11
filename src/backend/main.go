@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/gin-contrib/cors"
@@ -53,6 +54,50 @@ func main() {
 		} else {
 			c.JSON(http.StatusConflict, gin.H{"response": false})
 		}
+	})
+
+	// Add Game History Endpoint
+	r.GET("/add_game_history", func(c *gin.Context) {
+		username := c.Query("username")
+		mode := c.Query("mode")
+		level := c.Query("level")
+		score := c.Query("score")
+
+		// Convert level and score to integers
+		levelInt, err := strconv.Atoi(level)
+		if err != nil {
+			PrintlnRed("[Main] Invalid level value")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "Invalid level"})
+			return
+		}
+
+		scoreInt, err := strconv.Atoi(score)
+		if err != nil {
+			PrintlnRed("[Main] Invalid score value")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "Invalid score"})
+			return
+		}
+
+		// Call addGameHistory function
+		success := addGameHistory(username, mode, levelInt, scoreInt)
+		if success {
+			c.JSON(http.StatusOK, gin.H{"response": true})
+		} else {
+			c.JSON(http.StatusConflict, gin.H{"response": false})
+		}
+	})
+
+	// Leaderboard Endpoint
+	r.GET("/leaderboard", func(c *gin.Context) {
+		// Fetch top 5 users by highscore
+		leaderboard, err := getLeaderboard()
+		if err != nil {
+			PrintlnRed("[Main] Error Fetching Leaderboard: " + err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"response": "Error fetching leaderboard"})
+			return
+		}
+
+		c.JSON(http.StatusOK, leaderboard)
 	})
 
 	// Start server in a goroutine
