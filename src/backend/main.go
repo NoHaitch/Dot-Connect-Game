@@ -40,14 +40,13 @@ func main() {
 		username := c.Query("username")
 		password := c.Query("password")
 
-		// Check for bad query
 		if username == "" || password == "" {
 			PrintlnRed("[Main] Request Failed, Empty Query")
 			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
 			return
 		}
 
-		// Call register function
+		// main call
 		success := register(username, password)
 		if success {
 			c.JSON(http.StatusOK, gin.H{"response": true})
@@ -57,47 +56,56 @@ func main() {
 	})
 
 	// Add Game History Endpoint
-	r.GET("/add_game_history", func(c *gin.Context) {
+	r.GET("/addGameHistory", func(c *gin.Context) {
 		username := c.Query("username")
 		mode := c.Query("mode")
 		level := c.Query("level")
-		score := c.Query("score")
+		scoreStr := c.Query("score")
 
-		// Convert level and score to integers
-		levelInt, err := strconv.Atoi(level)
-		if err != nil {
-			PrintlnRed("[Main] Invalid level value")
-			c.JSON(http.StatusBadRequest, gin.H{"response": "Invalid level"})
+		if username == "" || mode == "" || level == "" || scoreStr == "" {
+			PrintlnRed("[Main] Request Failed, Empty Query")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
 			return
 		}
 
-		scoreInt, err := strconv.Atoi(score)
+		// Convert score to integer
+		score, err := strconv.Atoi(scoreStr)
 		if err != nil {
-			PrintlnRed("[Main] Invalid score value")
-			c.JSON(http.StatusBadRequest, gin.H{"response": "Invalid score"})
+			PrintlnRed("[Main] Invalid Score Format")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "INVALID SCORE"})
 			return
 		}
 
-		// Call addGameHistory function
-		success := addGameHistory(username, mode, levelInt, scoreInt)
+		// Add game history
+		success := addGameHistory(username, mode, level, score)
 		if success {
 			c.JSON(http.StatusOK, gin.H{"response": true})
 		} else {
-			c.JSON(http.StatusConflict, gin.H{"response": false})
+			c.JSON(http.StatusInternalServerError, gin.H{"response": false})
 		}
 	})
 
 	// Leaderboard Endpoint
 	r.GET("/leaderboard", func(c *gin.Context) {
-		// Fetch top 5 users by highscore
-		leaderboard, err := getLeaderboard()
-		if err != nil {
-			PrintlnRed("[Main] Error Fetching Leaderboard: " + err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"response": "Error fetching leaderboard"})
+		mode := c.Query("mode")
+		level := c.Query("level")
+
+		// Validate mode and level
+		if mode == "" || level == "" {
+			PrintlnRed("[Main] Request Failed, Empty Mode or Level")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
 			return
 		}
 
-		c.JSON(http.StatusOK, leaderboard)
+		// Get leaderboard
+		leaderboard, err := getLeaderboard(mode, level)
+		if err != nil {
+			PrintlnRed("[Main] Error Getting Leaderboard: " + err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"response": "ERROR"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"leaderboard": leaderboard})
 	})
 
 	// Start server in a goroutine
@@ -108,9 +116,7 @@ func main() {
 		}
 	}()
 
-	// Block until a signal is received
 	<-quit
 
-	// Perform cleanup
 	PrintlnRed("[Main] Shutting down server...")
 }
