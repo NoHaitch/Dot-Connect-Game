@@ -1,5 +1,12 @@
 body {
-    background-color: #dbb666;
     font-family: "Poppins", sans-serif;
-    overflow-x: hidden;
+    overflow: hidden;
   }
+
+.game-title {
+  font-family: "Bungee Spice", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  user-select: none;
+  text-align: center;
+}
