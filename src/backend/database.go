@@ -168,6 +168,28 @@ func getLeaderboard(mode, level string) ([]map[string]interface{}, error) {
 	return leaderboard, nil
 }
 
+// Login function to verify username and password
+func login(username, password string) bool {
+	var storedPassword string
+	row := db.QueryRow(`SELECT password FROM users WHERE username = ?`, username)
+	err := row.Scan(&storedPassword)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			PrintlnRed("[Main] Username not found: " + username)
+		} else {
+			PrintlnRed("[Main] Error Checking Username: " + err.Error())
+		}
+		return false
+	}
+
+	if storedPassword == password {
+		return true
+	} else {
+		PrintlnRed("[Main] Incorrect password for username: " + username)
+		return false
+	}
+}
+
 func init() {
 	// Initialize database connection and ensure tables exist
 	initDB()

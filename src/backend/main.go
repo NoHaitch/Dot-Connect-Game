@@ -36,9 +36,20 @@ func main() {
 	})
 
 	// Register Endpoint
-	r.GET("/register", func(c *gin.Context) {
-		username := c.Query("username")
-		password := c.Query("password")
+	r.POST("/register", func(c *gin.Context) {
+		var credentials struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+
+		if err := c.BindJSON(&credentials); err != nil {
+			PrintlnRed("[Main] Invalid JSON Format")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD REQUEST"})
+			return
+		}
+
+		username := credentials.Username
+		password := credentials.Password
 
 		if username == "" || password == "" {
 			PrintlnRed("[Main] Request Failed, Empty Query")
@@ -46,7 +57,7 @@ func main() {
 			return
 		}
 
-		// main call
+		// register
 		success := register(username, password)
 		if success {
 			c.JSON(http.StatusOK, gin.H{"response": true})
@@ -106,6 +117,37 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"leaderboard": leaderboard})
+	})
+
+	// Login Endpoint
+	r.POST("/login", func(c *gin.Context) {
+		var credentials struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+
+		if err := c.BindJSON(&credentials); err != nil {
+			PrintlnRed("[Main] Invalid JSON Format")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD REQUEST"})
+			return
+		}
+
+		username := credentials.Username
+		password := credentials.Password
+
+		if username == "" || password == "" {
+			PrintlnRed("[Main] Request Failed, Empty Query")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
+			return
+		}
+
+		// login
+		success := login(username, password)
+		if success {
+			c.JSON(http.StatusOK, gin.H{"response": true})
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"response": false})
+		}
 	})
 
 	// Start server in a goroutine
