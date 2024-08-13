@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"strconv"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -83,10 +82,8 @@ func register(username, password string) bool {
 
 // UpdateHighscore function to update the highscore for a specific mode and level for an existing user
 func updateHighscore(username, mode, level string, score int) bool {
-	// Construct the column name dynamically
 	columnName := mode + "_" + level
 
-	// Update the highscore for the specified mode and level if the score is higher
 	_, err := db.Exec(`UPDATE users SET `+columnName+` = ? WHERE username = ? AND `+columnName+` < ?`, score, username, score)
 	if err != nil {
 		PrintlnRed("[Main] Error Updating Highscore: " + err.Error())
@@ -122,22 +119,17 @@ func addGameHistory(username, mode, level string, score int) bool {
 	return updateHighscore(username, mode, level, score)
 }
 
-// GetLeaderboard function to retrieve the top 5 users for a specific mode and level
+// Retrieve the top 5 fastest users for a specific mode and level
 func getLeaderboard(mode, level string) ([]map[string]interface{}, error) {
-	// Construct the column name dynamically
 	columnName := mode + "_" + level
-	PrintlnGreen("[Database] Constructed Column Name: " + columnName)
 
-	// Query to get the top 5 users for the specified mode and level, excluding scores of 0
 	query := `
-	SELECT username, ` + columnName + ` as highscore
+	SELECT username, ` + columnName + ` as bestTime
 	FROM users
 	WHERE ` + columnName + ` > 0
-	ORDER BY ` + columnName + ` DESC
+	ORDER BY ` + columnName + ` ASC
 	LIMIT 5;
 	`
-
-	PrintlnGreen("[Database] SQL Query: " + query)
 
 	rows, err := db.Query(query)
 	if err != nil {
@@ -149,20 +141,15 @@ func getLeaderboard(mode, level string) ([]map[string]interface{}, error) {
 	var leaderboard []map[string]interface{}
 	for rows.Next() {
 		var username string
-		var highscore int
-		if err := rows.Scan(&username, &highscore); err != nil {
+		var bestTime int
+		if err := rows.Scan(&username, &bestTime); err != nil {
 			PrintlnRed("[Database] Error scanning rows: " + err.Error())
 			return nil, err
 		}
 		leaderboard = append(leaderboard, map[string]interface{}{
 			"username":  username,
-			"highscore": highscore,
+			"highscore": bestTime,
 		})
-	}
-
-	PrintlnGreen("[Database] Retrieved Leaderboard: ")
-	for _, entry := range leaderboard {
-		PrintlnGreen("Username: " + entry["username"].(string) + ", Highscore: " + strconv.Itoa(entry["highscore"].(int)))
 	}
 
 	return leaderboard, nil

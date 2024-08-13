@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dot-connect-api/algorithm"
 	"log"
 	"net/http"
 	"os"
@@ -147,6 +148,53 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"response": true})
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"response": false})
+		}
+	})
+
+	// Generate Random Board Endpoint
+	r.GET("/generateRandom", func(c *gin.Context) {
+		level := c.Query("level")
+
+		if level == "" {
+			PrintlnRed("[Main] Request Failed, Empty Level")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
+			return
+		}
+
+		board, err := algorithm.GenerateRandomBoard(level)
+		if err != nil {
+			PrintlnRed("[Main] Error Generating Random Board: " + err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"response": "ERROR"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"board": board})
+	})
+
+	// Solve DFS Endpoint
+	r.POST("/solvedfs", func(c *gin.Context) {
+		var requestData struct {
+			Board [][]int `json:"board"`
+		}
+
+		if err := c.BindJSON(&requestData); err != nil {
+			PrintlnRed("[Main] Invalid JSON Format")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD REQUEST"})
+			return
+		}
+
+		board := requestData.Board
+
+		// Convert the board to a graph and get the starting point
+		graph, startID := algorithm.BoardToGraph(board)
+
+		// Solve using DFS
+		path, found := algorithm.DFS(graph, startID)
+
+		if found {
+			c.JSON(http.StatusOK, gin.H{"path": path})
+		} else {
+			c.JSON(http.StatusNotFound, gin.H{"response": "No solution found"})
 		}
 	})
 
