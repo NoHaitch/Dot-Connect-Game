@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageTitle from "../components/PageTitle";
 import Leaderboard from "../components/Leaderboard";
 
@@ -8,6 +9,14 @@ function Home() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      navigate("/settings", { state: { username: storedUsername } });
+    }
+  }, [navigate]);
 
   const startNewGame = async () => {
     try {
@@ -23,6 +32,7 @@ function Home() {
       if (data.response) {
         console.log("Game Started!");
         setNewGame(false);
+        navigate("/settings", { state: { username } });
       } else {
         setError("Username already taken.");
       }
@@ -45,6 +55,7 @@ function Home() {
       if (data.response) {
         console.log("Game Loaded!");
         setLoadGame(false);
+        navigate("/settings", { state: { username } });
       } else {
         setError("Incorrect username or password.");
       }
@@ -55,7 +66,7 @@ function Home() {
 
   return (
     <>
-      <PageTitle title="Dot Connect Home" />
+      <PageTitle title="Dot-Connect Home" />
       <div className="w-screen h-screen justify-center items-center">
         <div className="w-full p-4 pt-40 h-full bg-gradient-to-br from-[#7a2096] to-[#181818] flex flex-col items-center">
           <div>
