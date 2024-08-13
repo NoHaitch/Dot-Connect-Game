@@ -78,14 +78,14 @@ const JSONFilePicker = ({ onFileSelect, level }) => {
   return (
     <div className="p-8 rounded-lg flex justify-center items-center flex-col bg-purple-700">
       <h1 className="text-white text-lg text-center">
-        Please choose a JSON file to input the board
+        Please choose a JSON file to input the custom board
       </h1>
       <h2 className="text-gray-400 mb-4 ">Level: {level}</h2>
       <input
         type="file"
         accept=".json"
         onChange={handleFileChange}
-        className="mb-4 text-white m-4"
+        className="mb-4 m-4 block w-full text-sm border rounded-lg cursor-pointer text-gray-300 focus:outline-none bg-blue-700 border-blue-600 placeholder-blue-400"
       />
       {error && <p className="text-red-500">{error}</p>}
       <Link

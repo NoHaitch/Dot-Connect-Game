@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import PageTitle from "../components/PageTitle";
+import Leaderboard from "../components/Leaderboard";
 
 function Settings() {
   const location = useLocation();
@@ -38,6 +39,9 @@ function Settings() {
       <PageTitle title="Dot-Connect Settings" />
       <div className="w-screen h-screen justify-center items-center">
         <div className="w-full p-4 h-full bg-gradient-to-br from-[#e27f2e] to-[#1b0900] flex flex-col items-center justify-center">
+          <div className="absolute top-0 left-0 m-2 scale-[0.85] bg-black bg-opacity-35 rounded-lg">
+            <Leaderboard />
+          </div>
           <h1 className="text-6xl drop-shadow-lg m-2 font-bold text-gray-300">
             Settings
           </h1>
@@ -155,7 +159,7 @@ function Settings() {
           <h1 className="text-white">Currently logged in as</h1>
           <h1 className="text-white underline">{username}</h1>
           <button
-            className="px-6 py-3 mt-4 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-700 transition-transform duration-300 ease-in-out"
+            className="scale-75 px-6 py-3 mt-4 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-700 transition-transform duration-300 ease-in-out"
             onClick={handleLogout}
           >
             Logout

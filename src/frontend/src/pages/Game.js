@@ -16,7 +16,9 @@ function Game() {
   const [showContent, setShowContent] = useState(false);
   const [showJSONInput, setShowJSONInput] = useState(false);
   const [showBackground, setShowBackground] = useState(true);
+  const [showAlgorithm, setShowAlgorithm] = useState(false);
   const [jsonFileData, setJsonFileData] = useState(null);
+  const [algorithm, setAlgorithm] = useState("DFS");
 
   useEffect(() => {
     if (!username || !mode || !level) {
@@ -24,14 +26,23 @@ function Game() {
       return;
     }
 
-    if (boardType === "custom") {
+    if (mode === "bot") {
+      setShowAlgorithm(true);
       setShowJSONInput(true);
     } else {
-      performLogic();
+      if (boardType === "custom") {
+        setShowJSONInput(true);
+      } else {
+        performLogic();
+      }
     }
 
     localStorage.setItem("username", username);
   }, [username, mode, level, boardType, navigate]);
+
+  useEffect(() => {
+    console.log("jsonFileData updated:", jsonFileData);
+  }, [jsonFileData]);
 
   const performLogic = () => {
     setTimeout(() => {
@@ -46,12 +57,12 @@ function Game() {
   const handleFileSelect = (data) => {
     setJsonFileData(data);
     setShowJSONInput(false);
-    performLogic();
-    console.log(jsonFileData);
+    
   };
 
   const handleStartGame = () => {
     setShowBackground(false);
+    setShowContent(true);
   };
 
   return (
@@ -65,9 +76,38 @@ function Game() {
             {showJSONInput && (
               <JSONFilePicker onFileSelect={handleFileSelect} level={level} />
             )}
-            {showContent && !showJSONInput && (
+            {!showContent && !showJSONInput && (
               <div className="p-8 rounded-lg flex justify-center items-center flex-col">
-                <h1 className="text-white text-lg mb-4">
+                {showAlgorithm && (
+                  <div className="flex flex-col justify-center items-center m-4 mb-8">
+                    <h1 className="text-lg text-white font-bold m-2">
+                      Choose an algorithm{" "}
+                    </h1>
+                    <div className="flex space-x-3">
+                      <button
+                        className={`py-2 px-4 rounded w-[96px] transition-transform duration-300 ease-in-out bg-green-400 ${
+                          algorithm === "DFS"
+                            ? "text-gray-900 scale-110"
+                            : "text-gray-800 opacity-50"
+                        }`}
+                        onClick={() => setAlgorithm("DFS")}
+                      >
+                        DFS
+                      </button>
+                      <button
+                        className={`py-2 px-4 rounded w-[96px] transition-transform duration-300 ease-in-out bg-lime-400 ${
+                          algorithm === "other"
+                            ? "text-gray-900 scale-110"
+                            : "text-gray-800 opacity-50"
+                        }`}
+                        onClick={() => setAlgorithm("other")}
+                      >
+                        other
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <h1 className="text-gray-400 text-lg mb-4">
                   Note: The timer starts the moment the button is pressed
                 </h1>
                 <div className="flex flex-row justify-center items-center space-x-4 text-gray-400 mb-4">

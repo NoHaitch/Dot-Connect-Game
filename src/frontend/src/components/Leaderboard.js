@@ -139,7 +139,7 @@ function Leaderboard() {
                 >
                   <td className="py-3 px-6 text-center">{index + 1}</td>
                   <td className="py-3 px-6">{user.username}</td>
-                  <td className="py-3 px-6 text-center">{user.highscore}</td>
+                  <td className="py-3 px-6 text-center">{user.highscore} ms</td>
                 </tr>
               ))}
             </tbody>
