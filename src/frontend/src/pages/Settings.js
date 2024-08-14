@@ -21,7 +21,6 @@ function Settings() {
   }, [username, navigate]);
 
   const handlePlay = () => {
-    console.log("Play clicked");
     navigate("/game", { state: { username, mode, level, boardType} });
   };
 
