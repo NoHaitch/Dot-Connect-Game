@@ -2,26 +2,36 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { twMerge } from "tailwind-merge";
 
-const Board = ({ board }) => {
-  console.log(board);
-
+const Board = ({ board, onWin  }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startDot, setStartDot] = useState(null);
   const [lastDot, setLastDot] = useState(null);
   const [path, setPath] = useState([]);
   const [edges, setEdges] = useState([]);
+  const [totalUsableDot, setTotalUsableDot] = useState(0);
 
   useEffect(() => {
+    let initialStartDot = null;
+    let totalDots = 0;
+
     for (let rowIndex = 0; rowIndex < board.length; rowIndex++) {
       for (let cellIndex = 0; cellIndex < board[rowIndex].length; cellIndex++) {
         if (board[rowIndex][cellIndex] === 2) {
-          setStartDot({ rowIndex, cellIndex });
-          setLastDot({ rowIndex, cellIndex });
-          setPath([{ rowIndex, cellIndex }]);
-          return;
+          initialStartDot = { rowIndex, cellIndex };
+          totalDots++;
+        } else if (board[rowIndex][cellIndex] === 0) {
+          totalDots++;
         }
       }
     }
+
+    if (initialStartDot) {
+      setStartDot(initialStartDot);
+      setLastDot(initialStartDot);
+      setPath([initialStartDot]);
+    }
+
+    setTotalUsableDot(totalDots);
   }, [board]);
 
   const handleStartDrawing = (rowIndex, cellIndex) => {
@@ -82,9 +92,8 @@ const Board = ({ board }) => {
   };
 
   const handleEndDrawing = (rowIndex, cellIndex) => {
+    const prevDot = path[path.length - 1];
     if (isDrawing) {
-      const prevDot = path[path.length - 1];
-
       if (
         prevDot.rowIndex === rowIndex &&
         isAdjacent(prevDot, { rowIndex, cellIndex }) &&
@@ -117,6 +126,13 @@ const Board = ({ board }) => {
     }
 
     setIsDrawing(false);
+
+    if (
+      path.length === totalUsableDot - 1 &&
+      !isDotInPath(rowIndex, cellIndex)
+    ) {
+      onWin()
+    }
     if (path.length > 1) {
       setLastDot(path[path.length - 1]);
     } else {
