@@ -30,7 +30,6 @@ function Home() {
 
       const data = await response.json();
       if (data.response) {
-        console.log("Game Started!");
         setNewGame(false);
         navigate("/settings", { state: { username } });
       } else {
@@ -53,7 +52,6 @@ function Home() {
 
       const data = await response.json();
       if (data.response) {
-        console.log("Game Loaded!");
         setLoadGame(false);
         navigate("/settings", { state: { username } });
       } else {

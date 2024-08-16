@@ -9,8 +9,8 @@ function Settings() {
   const username = location.state?.username || localStorage.getItem("username");
 
   const [mode, setMode] = useState("manual");
-  const [level, setLevel] = useState("medium");
-  const [boardType, setBoardType] = useState("random");
+  const [level, setLevel] = useState("beginner");
+  const [boardType, setBoardType] = useState("custom");
 
   useEffect(() => {
     if (!username) {
@@ -21,7 +21,7 @@ function Settings() {
   }, [username, navigate]);
 
   const handlePlay = () => {
-    navigate("/game", { state: { username, mode, level, boardType} });
+    navigate("/game", { state: { username, mode, level, boardType } });
   };
 
   const handleLogout = () => {
@@ -38,7 +38,7 @@ function Settings() {
       <PageTitle title="Dot-Connect Settings" />
       <div className="w-screen h-screen justify-center items-center">
         <div className="w-full p-4 h-full bg-gradient-to-br from-[#e27f2e] to-[#1b0900] flex flex-col items-center justify-center">
-          <div className="absolute top-0 left-0 m-2 scale-[0.85] bg-black bg-opacity-35 rounded-lg">
+          <div className="absolute top-0 left-0 m-2 scale-[0.75] bg-black bg-opacity-35 rounded-lg">
             <Leaderboard />
           </div>
           <h1 className="text-6xl drop-shadow-lg m-2 font-bold text-gray-300">

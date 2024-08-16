@@ -209,6 +209,21 @@ function Game() {
                   onWin={handleWin}
                   isInteractive={isBoardActive}
                 />
+                {boardType === "random" && isBoardActive && (
+                  <div className="absolute bottom-5">
+                    <button
+                      className="px-4 py-3 rounded-lg bg-yellow-100 text-gray-700 text-xm"
+                      onClick={() => {
+                        setShowGame(false);
+                        setShowBackground(true);
+                        setIsFetchingBoard(true);
+                        fetchRandomBoard();
+                      }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Board board={jsonFileData.board} onWin={handleWin} />

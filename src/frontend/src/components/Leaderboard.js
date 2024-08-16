@@ -6,7 +6,7 @@ function Leaderboard() {
   const [error, setError] = useState(null);
   const [mode, setMode] = useState("manual");
   const [level, setLevel] = useState("medium");
-  const [boardType, setBoardType] = useState("custom"); // Default boardType
+  const [boardType, setBoardType] = useState("custom");
 
   useEffect(() => {
     // Set boardType based on mode
@@ -22,13 +22,10 @@ function Leaderboard() {
       })
       .then((data) => {
         if (data.leaderboard === null || data.leaderboard.length === 0) {
-          // No data
           setLeaderboard(null);
         } else if (Array.isArray(data.leaderboard)) {
-          // Show data
           setLeaderboard(data.leaderboard);
         } else {
-          // Error response
           setError("Unexpected data format");
         }
         setLoading(false);
