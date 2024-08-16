@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { twMerge } from "tailwind-merge";
 
-const Board = ({ board, onWin, isInteractive }) => {
+const Board = ({ board, onWin, isInteractive, isBotMode }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startDot, setStartDot] = useState(null);
   const [lastDot, setLastDot] = useState(null);
   const [path, setPath] = useState([]);
   const [animating, setAnimating] = useState(false);
-  const [animationPath, setAnimationPath] = useState(false);
+  const [animationPath, setAnimationPath] = useState([]);
   const [edges, setEdges] = useState([]);
   const [totalUsableDot, setTotalUsableDot] = useState(0);
 
@@ -58,11 +58,37 @@ const Board = ({ board, onWin, isInteractive }) => {
   };
 
   const handleDotClick = (rowIndex, cellIndex, event) => {
-    if (!isInteractive) {
+    if (!isInteractive && !isBotMode) {
       return;
     }
 
-    if (event.button === 0) {
+    if (isBotMode) {
+      const newDot = { rowIndex, cellIndex };
+      if (lastDot.rowIndex === newDot.rowIndex) {
+        const elementId = `hr${rowIndex}-${
+          lastDot.cellIndex > cellIndex ? cellIndex : cellIndex - 1
+        }`;
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.style.display = "block";
+          setEdges((edges) => [...edges, elementId]);
+        }
+      }
+
+      if (lastDot.cellIndex === newDot.cellIndex) {
+        const elementId = `br${
+          lastDot.rowIndex > rowIndex ? rowIndex : rowIndex - 1
+        }-${cellIndex}`;
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.style.display = "block";
+          setEdges((edges) => [...edges, elementId]);
+        }
+      }
+
+      setPath((prevPath) => [...prevPath, newDot]);
+      setLastDot(newDot);
+    } else if (event.button === 0) {
       if (board[rowIndex][cellIndex] === 1) {
         return;
       }
@@ -167,14 +193,28 @@ const Board = ({ board, onWin, isInteractive }) => {
       return;
     }
 
+    if (animationPath.length === 0) {
+      console.log("TEST");
+      
+      setAnimationPath(path);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const rightClickEvent = new MouseEvent("contextmenu", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        button: 2,
+      });
+
+      document.getElementById("animate-button").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    }
+
     setAnimating(true);
 
     handleClearPath();
-    console.log(animationPath);
 
     for (let i = 1; i < animationPath.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      const prevDot = animationPath[i-1];
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const prevDot = animationPath[i - 1];
       const currDot = animationPath[i];
       setPath((path) => [...path, animationPath[i]]);
       if (prevDot.rowIndex === currDot.rowIndex) {
@@ -306,6 +346,7 @@ const Board = ({ board, onWin, isInteractive }) => {
           <button
             className="px-3 py-4 bg-yellow-300 rounded-lg hover:bg-yellow-500"
             onClick={() => handleAnimatePath()}
+            id="animate-button"
           >
             Animate Solution
           </button>
@@ -319,6 +360,7 @@ Board.propTypes = {
   board: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)).isRequired,
   onWin: PropTypes.func.isRequired,
   isInteractive: PropTypes.bool.isRequired,
+  isBotMode: PropTypes.bool.isRequired,
 };
 
 export default Board;
