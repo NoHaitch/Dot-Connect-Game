@@ -46,16 +46,17 @@ func initDB() {
 
 	// Create history table if it does not exist
 	historyTableCreationSQL := `
-    CREATE TABLE IF NOT EXISTS history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL,
-        mode TEXT NOT NULL,
-        level TEXT NOT NULL,
-        score INTEGER NOT NULL,
-        boardType TEXT DEFAULT NULL,
-        FOREIGN KEY(username) REFERENCES users(username)
-    );
-    `
+CREATE TABLE IF NOT EXISTS history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    level TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    boardType TEXT DEFAULT NULL,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(username) REFERENCES users(username)
+);
+`
 	_, err = db.Exec(historyTableCreationSQL)
 	if err != nil {
 		PrintlnRed("[Main] DATABASE ERROR: " + err.Error())
@@ -86,7 +87,7 @@ func register(username string, password string) bool {
 	return true
 }
 
-// UpdateHighscore function to update the highscore for a specific mode, level, and board type for an existing user
+// Update the highscore
 func updateHighscore(username string, mode string, level string, boardType string, score int) bool {
 	columnName := mode + "_" + boardType + "_" + level
 
@@ -98,7 +99,7 @@ func updateHighscore(username string, mode string, level string, boardType strin
 	return true
 }
 
-// Add a new game record to the history table
+// Add a new game record
 func addGameHistory(username string, mode string, level string, boardType string, score int) bool {
 	var exists bool
 	row := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)`, username)
@@ -123,7 +124,7 @@ func addGameHistory(username string, mode string, level string, boardType string
 	return updateHighscore(username, mode, level, boardType, score)
 }
 
-// Retrieve the top 5 fastest users for a specific mode and level
+// Retrieve the leaderbor (top 5 fastest users)
 func getLeaderboard(mode string, level string, boardType string) ([]map[string]interface{}, error) {
 	columnName := mode + "_" + boardType + "_" + level
 	fmt.Println(columnName)
@@ -206,7 +207,57 @@ func isNewHighscore(username string, mode string, level string, score int, board
 	return false, nil
 }
 
+// Retrieve the game history for a specific user
+func getHistory(username string) ([]map[string]interface{}, error) {
+	var exists bool
+	row := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)`, username)
+	err := row.Scan(&exists)
+	if err != nil {
+		PrintlnRed("[Main] Error Checking Username: " + err.Error())
+		return nil, err
+	}
+
+	if !exists {
+		PrintlnRed("[Main] Username not found: " + username)
+		return nil, fmt.Errorf("username not found")
+	}
+
+	// Retrieve the game history for the user
+	query := `
+	SELECT mode, level, score, boardType, date
+	FROM history
+	WHERE username = ?
+	ORDER BY date DESC;
+	`
+
+	rows, err := db.Query(query, username)
+	if err != nil {
+		PrintlnRed("[Database] Error executing query: " + err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var history []map[string]interface{}
+	for rows.Next() {
+		var mode, level, boardType string
+		var score int
+		var date string
+		if err := rows.Scan(&mode, &level, &score, &boardType, &date); err != nil {
+			PrintlnRed("[Database] Error scanning rows: " + err.Error())
+			return nil, err
+		}
+		history = append(history, map[string]interface{}{
+			"mode":      mode,
+			"level":     level,
+			"score":     score,
+			"boardType": boardType,
+			"date":      date,
+		})
+	}
+
+	return history, nil
+}
+
 func init() {
-	// Initialize database connection and ensure tables exist
 	initDB()
 }

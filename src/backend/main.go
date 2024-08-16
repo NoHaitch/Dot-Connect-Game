@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-	// Initialize database connection
 	initDB()
 
 	// Starting API
@@ -70,7 +69,7 @@ func main() {
 		}
 	})
 
-	// Add Game History Endpoint (POST)
+	// Add Game History Endpoint
 	r.POST("/addGameHistory", func(c *gin.Context) {
 		var gameHistory struct {
 			Username  string `json:"username"`
@@ -247,6 +246,25 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"response": isHigher})
+	})
+
+	// Get User History Endpoint
+	r.GET("/userHistory", func(c *gin.Context) {
+		username := c.Query("username")
+		if username == "" {
+			PrintlnRed("[Main] Request Failed, Empty Username")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
+			return
+		}
+
+		history, err := getHistory(username)
+		if err != nil {
+			PrintlnRed("[Main] Error Getting User History: " + err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"response": "ERROR"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"history": history})
 	})
 
 	// Start server in a goroutine
