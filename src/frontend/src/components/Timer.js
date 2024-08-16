@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 
-function Timer({ isActive, onTimeUpdate }) {
+function Timer({ isActive, onTimeUpdate = null }) {
   const [time, setTime] = useState(0);
   const intervalRef = useRef(null);
 
@@ -9,13 +9,13 @@ function Timer({ isActive, onTimeUpdate }) {
     if (isActive) {
       intervalRef.current = setInterval(() => {
         setTime((prevTime) => {
-          const newTime = prevTime + 5;
+          const newTime = prevTime + 20;
           if (onTimeUpdate) {
             onTimeUpdate(newTime);
           }
           return newTime;
         });
-      }, 5);
+      }, 20);
     } else {
       clearInterval(intervalRef.current);
     }
@@ -69,10 +69,6 @@ function Timer({ isActive, onTimeUpdate }) {
 Timer.propTypes = {
   isActive: PropTypes.bool.isRequired,
   onTimeUpdate: PropTypes.func,
-};
-
-Timer.defaultProps = {
-  onTimeUpdate: null,
 };
 
 export default Timer;

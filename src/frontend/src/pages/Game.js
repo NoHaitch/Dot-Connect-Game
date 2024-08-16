@@ -29,14 +29,29 @@ function Game() {
   const [newHighscore, setNewHighscore] = useState(false);
   const [score, setScore] = useState(false);
   const [showQuitConfirmation, setShowQuitConfirmation] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
+  const [isFetchingBoard, setIsFetchingBoard] = useState(false);
 
   useEffect(() => {
+    
     if (!username || !mode || !level) {
       navigate("/settings");
       return;
     }
+    
+    if(!boardType || mode === 'bot'){
+      boardType = 'custom'
+    }
 
-    if (mode === "bot") {
+    console.log(mode);
+    console.log(level);
+    console.log(boardType);
+    
+
+    if (boardType === "random" && mode === "manual") {
+      setIsFetchingBoard(true);
+      fetchRandomBoard();
+    } else if (mode === "bot") {
       setShowJSONInput(true);
     } else if (mode === "manual" && boardType === "custom") {
       setShowJSONInput(true);
@@ -46,6 +61,22 @@ function Game() {
 
     localStorage.setItem("username", username);
   }, [username, mode, level, boardType, navigate]);
+
+  const fetchRandomBoard = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/generateRandom?level=${level}`);
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      setJsonFileData({ board: data.board });
+      setIsFetchingBoard(false); 
+      setShowStartGame(true); 
+    } catch (error) {
+      console.error("Error fetching random board:", error);
+      setIsFetchingBoard(false); 
+    }
+  };
 
   const handleFileSelect = (data) => {
     setJsonFileData(data);
@@ -58,7 +89,7 @@ function Game() {
     setShowStartGame(true);
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     setShowBackground(false);
     setShowGame(true);
     setIsTimerActive(true);
@@ -66,7 +97,11 @@ function Game() {
 
   const handleWin = async () => {
     setIsTimerActive(false);
+    setShowWinPopup(false);
+
     try {
+      setShowLoading(true);
+
       const response = await fetch(
         `http://localhost:8080/isHighscore?username=${username}&score=${score}&mode=${mode}&level=${level}&boardType=${boardType}`
       );
@@ -74,15 +109,18 @@ function Game() {
         throw new Error("Network response was not ok");
       }
       const data = await response.json();
-
       if (data.response) {
         setNewHighscore(true);
+      } else {
+        setNewHighscore(false);
       }
 
       await addGameHistory();
-      setShowWinPopup(true);
     } catch (error) {
       console.error("Error during handleWin:", error);
+      setNewHighscore(false);
+    } finally {
+      setShowLoading(false);
       setShowWinPopup(true);
     }
   };
@@ -141,6 +179,14 @@ function Game() {
     <>
       <PageTitle title="Dot-Connect Game" />
       <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-br from-[#5bffa0] to-[#1b0900]">
+        {isFetchingBoard && (
+          <div className="absolute w-screen h-screen bg-black bg-opacity-85 flex justify-center items-center">
+            <div className="bg-white p-8 rounded-lg flex justify-center items-center flex-col">
+              <h1 className="text-gray-900 text-lg mb-4">Generating board...</h1>
+            </div>
+          </div>
+        )}
+
         {showGame && (
           <>
             <div className="absolute ml-[-800px]">
@@ -168,7 +214,7 @@ function Game() {
           </>
         )}
 
-        {showBackground && (
+        {showBackground && !isFetchingBoard && (
           <div className="absolute w-screen h-screen bg-black bg-opacity-85 flex justify-center items-center">
             {showJSONInput && (
               <JSONFilePicker onFileSelect={handleFileSelect} level={level} />
@@ -235,6 +281,15 @@ function Game() {
               <h1 className="text-black  text-2xl m-3">You Win!</h1>
               <h1 className="text-gray-900 text-lg m-1">Score</h1>
               <h1 className="mb-4">{score} ms</h1>
+              {showLoading && (
+                <div className="absolute w-screen h-screen bg-black bg-opacity-85 flex justify-center items-center">
+                  <div className="bg-white p-8 rounded-lg flex justify-center items-center flex-col">
+                    <h1 className="text-gray-900 text-lg mb-4">
+                      Checking highscore...
+                    </h1>
+                  </div>
+                </div>
+              )}
               {newHighscore && (
                 <div className="flex flex-row m-1 justify-center text-center">
                   <TbConfetti className="size-[16px]" />

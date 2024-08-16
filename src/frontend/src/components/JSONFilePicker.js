@@ -1,5 +1,3 @@
-// src/components/JSONFilePicker.js
-
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { RiArrowGoBackFill } from "react-icons/ri";
@@ -8,17 +6,35 @@ import { Link } from "react-router-dom";
 const JSONFilePicker = ({ onFileSelect, level }) => {
   const [error, setError] = useState("");
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
       if (file.type === "application/json") {
         setError("");
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           try {
             const json = JSON.parse(e.target.result);
             if (validateJSON(json, level)) {
-              onFileSelect(json);
+              // Check if the board is solvable
+              const response = await fetch('http://localhost:8080/solvedfs', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ board: json.board }),
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                if (data.found) {
+                  onFileSelect(json);
+                } else {
+                  setError("The board is not solvable.");
+                }
+              } else {
+                setError("Error checking solvability.");
+              }
             } else {
               setError("Invalid JSON format for this level.");
             }
