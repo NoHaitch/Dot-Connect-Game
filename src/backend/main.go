@@ -166,19 +166,22 @@ func main() {
 	r.GET("/generateRandom", func(c *gin.Context) {
 		level := c.Query("level")
 
+		// Check if level is provided
 		if level == "" {
 			PrintlnRed("[Main] Request Failed, Empty Level")
 			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
 			return
 		}
 
+		// Generate the board
 		board, err := algorithm.GenerateRandomBoard(level)
 		if err != nil {
 			PrintlnRed("[Main] Error Generating Random Board: " + err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"response": "ERROR"})
+			c.JSON(http.StatusInternalServerError, gin.H{"response": "ERROR", "message": err.Error()})
 			return
 		}
 
+		// Return the board as JSON
 		c.JSON(http.StatusOK, gin.H{"board": board})
 	})
 
@@ -196,17 +199,21 @@ func main() {
 
 		board := requestData.Board
 
-		// Convert the board to a graph and get the starting point
 		graph, startID := algorithm.BoardToGraph(board)
 
-		// Solve using DFS
 		path, found := algorithm.DFS(graph, startID)
 
-		if found {
-			c.JSON(http.StatusOK, gin.H{"path": path})
-		} else {
-			c.JSON(http.StatusNotFound, gin.H{"response": "No solution found"})
+		response := gin.H{
+			"found": found,
 		}
+
+		if found {
+			response["path"] = path
+		} else {
+			response["message"] = "No solution found"
+		}
+
+		c.JSON(http.StatusOK, response)
 	})
 
 	// Check if score is better than highscore

@@ -199,7 +199,7 @@ func isNewHighscore(username string, mode string, level string, score int, board
 		}
 	}
 
-	if score > currentHighscore {
+	if score < currentHighscore {
 		return true, nil
 	}
 
