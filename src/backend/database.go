@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -24,14 +25,18 @@ func initDB() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        manual_beginner INTEGER DEFAULT 0,
-        manual_easy INTEGER DEFAULT 0,
-        manual_medium INTEGER DEFAULT 0,
-        manual_hard INTEGER DEFAULT 0,
-        bot_beginner INTEGER DEFAULT 0,
-        bot_easy INTEGER DEFAULT 0,
-        bot_medium INTEGER DEFAULT 0,
-        bot_hard INTEGER DEFAULT 0
+        bot_custom_beginner INTEGER DEFAULT 0,
+        bot_custom_easy INTEGER DEFAULT 0,
+        bot_custom_medium INTEGER DEFAULT 0,
+        bot_custom_hard INTEGER DEFAULT 0,
+        manual_random_beginner INTEGER DEFAULT 0,
+        manual_random_easy INTEGER DEFAULT 0,
+        manual_random_medium INTEGER DEFAULT 0,
+        manual_random_hard INTEGER DEFAULT 0,
+        manual_custom_beginner INTEGER DEFAULT 0,
+        manual_custom_easy INTEGER DEFAULT 0,
+        manual_custom_medium INTEGER DEFAULT 0,
+        manual_custom_hard INTEGER DEFAULT 0
     );
     `
 	_, err = db.Exec(userTableCreationSQL)
@@ -47,6 +52,7 @@ func initDB() {
         mode TEXT NOT NULL,
         level TEXT NOT NULL,
         score INTEGER NOT NULL,
+        boardType TEXT DEFAULT NULL,
         FOREIGN KEY(username) REFERENCES users(username)
     );
     `
@@ -57,7 +63,7 @@ func initDB() {
 }
 
 // Register function to add a new user
-func register(username, password string) bool {
+func register(username string, password string) bool {
 	var exists bool
 	row := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)`, username)
 	err := row.Scan(&exists)
@@ -80,11 +86,11 @@ func register(username, password string) bool {
 	return true
 }
 
-// UpdateHighscore function to update the highscore for a specific mode and level for an existing user
-func updateHighscore(username, mode, level string, score int) bool {
-	columnName := mode + "_" + level
+// UpdateHighscore function to update the highscore for a specific mode, level, and board type for an existing user
+func updateHighscore(username string, mode string, level string, boardType string, score int) bool {
+	columnName := mode + "_" + boardType + "_" + level
 
-	_, err := db.Exec(`UPDATE users SET `+columnName+` = ? WHERE username = ? AND `+columnName+` < ?`, score, username, score)
+	_, err := db.Exec(`UPDATE users SET `+columnName+` = ? WHERE username = ? AND (`+columnName+` = 0 OR `+columnName+` > ?)`, score, username, score)
 	if err != nil {
 		PrintlnRed("[Main] Error Updating Highscore: " + err.Error())
 		return false
@@ -92,9 +98,8 @@ func updateHighscore(username, mode, level string, score int) bool {
 	return true
 }
 
-// AddGameHistory function to add a new game record to the history table
-func addGameHistory(username, mode, level string, score int) bool {
-	// Check if the username exists
+// Add a new game record to the history table
+func addGameHistory(username string, mode string, level string, boardType string, score int) bool {
 	var exists bool
 	row := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)`, username)
 	err := row.Scan(&exists)
@@ -109,19 +114,19 @@ func addGameHistory(username, mode, level string, score int) bool {
 	}
 
 	// Insert the new game history
-	_, err = db.Exec(`INSERT INTO history (username, mode, level, score) VALUES (?, ?, ?, ?)`, username, mode, level, score)
+	_, err = db.Exec(`INSERT INTO history (username, mode, level, score, boardType) VALUES (?, ?, ?, ?, ?)`, username, mode, level, score, boardType)
 	if err != nil {
 		PrintlnRed("[Main] Error Inserting Game History: " + err.Error())
 		return false
 	}
 
-	// Update highscore for the mode and level if the new score is higher
-	return updateHighscore(username, mode, level, score)
+	return updateHighscore(username, mode, level, boardType, score)
 }
 
 // Retrieve the top 5 fastest users for a specific mode and level
-func getLeaderboard(mode, level string) ([]map[string]interface{}, error) {
-	columnName := mode + "_" + level
+func getLeaderboard(mode string, level string, boardType string) ([]map[string]interface{}, error) {
+	columnName := mode + "_" + boardType + "_" + level
+	fmt.Println(columnName)
 
 	query := `
 	SELECT username, ` + columnName + ` as bestTime
@@ -156,7 +161,7 @@ func getLeaderboard(mode, level string) ([]map[string]interface{}, error) {
 }
 
 // Login function to verify username and password
-func login(username, password string) bool {
+func login(username string, password string) bool {
 	var storedPassword string
 	row := db.QueryRow(`SELECT password FROM users WHERE username = ?`, username)
 	err := row.Scan(&storedPassword)
@@ -175,6 +180,30 @@ func login(username, password string) bool {
 		PrintlnRed("[Main] Incorrect password for username: " + username)
 		return false
 	}
+}
+
+// Check if the score is better than the highscore
+func isNewHighscore(username string, mode string, level string, score int, boardType string) (bool, error) {
+	columnName := mode + "_" + boardType + "_" + level
+
+	var currentHighscore int
+	row := db.QueryRow(`SELECT `+columnName+` FROM users WHERE username = ?`, username)
+	err := row.Scan(&currentHighscore)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			PrintlnRed("[Main] Username not found: " + username)
+			return false, err
+		} else {
+			PrintlnRed("[Main] Error retrieving highscore: " + err.Error())
+			return false, err
+		}
+	}
+
+	if score > currentHighscore {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func init() {

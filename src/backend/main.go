@@ -14,6 +14,9 @@ import (
 )
 
 func main() {
+	// Initialize database connection
+	initDB()
+
 	// Starting API
 	PrintlnYellow("[Main] Dot-Game API started...")
 	port := "8080"
@@ -58,7 +61,7 @@ func main() {
 			return
 		}
 
-		// register
+		// Register
 		success := register(username, password)
 		if success {
 			c.JSON(http.StatusOK, gin.H{"response": true})
@@ -67,29 +70,36 @@ func main() {
 		}
 	})
 
-	// Add Game History Endpoint
-	r.GET("/addGameHistory", func(c *gin.Context) {
-		username := c.Query("username")
-		mode := c.Query("mode")
-		level := c.Query("level")
-		scoreStr := c.Query("score")
+	// Add Game History Endpoint (POST)
+	r.POST("/addGameHistory", func(c *gin.Context) {
+		var gameHistory struct {
+			Username  string `json:"username"`
+			Mode      string `json:"mode"`
+			Level     string `json:"level"`
+			BoardType string `json:"boardType"`
+			Score     int    `json:"score"`
+		}
 
-		if username == "" || mode == "" || level == "" || scoreStr == "" {
+		if err := c.BindJSON(&gameHistory); err != nil {
+			PrintlnRed("[Main] Invalid JSON Format")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD REQUEST"})
+			return
+		}
+
+		username := gameHistory.Username
+		mode := gameHistory.Mode
+		level := gameHistory.Level
+		boardType := gameHistory.BoardType
+		score := gameHistory.Score
+
+		if username == "" || mode == "" || level == "" || boardType == "" {
 			PrintlnRed("[Main] Request Failed, Empty Query")
 			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
 			return
 		}
 
-		// Convert score to integer
-		score, err := strconv.Atoi(scoreStr)
-		if err != nil {
-			PrintlnRed("[Main] Invalid Score Format")
-			c.JSON(http.StatusBadRequest, gin.H{"response": "INVALID SCORE"})
-			return
-		}
-
 		// Add game history
-		success := addGameHistory(username, mode, level, score)
+		success := addGameHistory(username, mode, level, boardType, score)
 		if success {
 			c.JSON(http.StatusOK, gin.H{"response": true})
 		} else {
@@ -101,16 +111,17 @@ func main() {
 	r.GET("/leaderboard", func(c *gin.Context) {
 		mode := c.Query("mode")
 		level := c.Query("level")
+		boardType := c.Query("boardType") // New parameter for board type
 
-		// Validate mode and level
-		if mode == "" || level == "" {
-			PrintlnRed("[Main] Request Failed, Empty Mode or Level")
+		// Validate mode, level, and boardType
+		if mode == "" || level == "" || boardType == "" {
+			PrintlnRed("[Main] Request Failed, Empty Mode, Level, or Board Type")
 			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
 			return
 		}
 
 		// Get leaderboard
-		leaderboard, err := getLeaderboard(mode, level)
+		leaderboard, err := getLeaderboard(mode, level, boardType)
 		if err != nil {
 			PrintlnRed("[Main] Error Getting Leaderboard: " + err.Error())
 			c.JSON(http.StatusInternalServerError, gin.H{"response": "ERROR"})
@@ -142,7 +153,7 @@ func main() {
 			return
 		}
 
-		// login
+		// Login
 		success := login(username, password)
 		if success {
 			c.JSON(http.StatusOK, gin.H{"response": true})
@@ -196,6 +207,39 @@ func main() {
 		} else {
 			c.JSON(http.StatusNotFound, gin.H{"response": "No solution found"})
 		}
+	})
+
+	// Check if score is better than highscore
+	r.GET("/isHighscore", func(c *gin.Context) {
+		username := c.Query("username")
+		mode := c.Query("mode")
+		level := c.Query("level")
+		boardType := c.Query("boardType")
+		scoreStr := c.Query("score")
+
+		if username == "" || mode == "" || level == "" || scoreStr == "" || boardType == "" {
+			PrintlnRed("[Main] Request Failed, Empty Query")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
+			return
+		}
+
+		// Convert score to integer
+		score, err := strconv.Atoi(scoreStr)
+		if err != nil {
+			PrintlnRed("[Main] Invalid Score Format")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "INVALID SCORE"})
+			return
+		}
+
+		// Check if the score is higher than the highscore
+		isHigher, err := isNewHighscore(username, mode, level, score, boardType)
+		if err != nil {
+			PrintlnRed("[Main] Error Checking Highscore: " + err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"response": "ERROR"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"response": isHigher})
 	})
 
 	// Start server in a goroutine
