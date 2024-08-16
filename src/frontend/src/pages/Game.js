@@ -31,22 +31,17 @@ function Game() {
   const [showQuitConfirmation, setShowQuitConfirmation] = useState(false);
   const [showLoading, setShowLoading] = useState(false);
   const [isFetchingBoard, setIsFetchingBoard] = useState(false);
+  const [isBoardActive, setIsBoardActive] = useState(false);
 
   useEffect(() => {
-    
     if (!username || !mode || !level) {
       navigate("/settings");
       return;
     }
-    
-    if(!boardType || mode === 'bot'){
-      boardType = 'custom'
-    }
 
-    console.log(mode);
-    console.log(level);
-    console.log(boardType);
-    
+    if (mode === "manual") {
+      setIsBoardActive(true);
+    }
 
     if (boardType === "random" && mode === "manual") {
       setIsFetchingBoard(true);
@@ -64,17 +59,19 @@ function Game() {
 
   const fetchRandomBoard = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/generateRandom?level=${level}`);
+      const response = await fetch(
+        `http://localhost:8080/generateRandom?level=${level}`
+      );
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
       const data = await response.json();
       setJsonFileData({ board: data.board });
-      setIsFetchingBoard(false); 
-      setShowStartGame(true); 
+      setIsFetchingBoard(false);
+      setShowStartGame(true);
     } catch (error) {
       console.error("Error fetching random board:", error);
-      setIsFetchingBoard(false); 
+      setIsFetchingBoard(false);
     }
   };
 
@@ -122,6 +119,7 @@ function Game() {
     } finally {
       setShowLoading(false);
       setShowWinPopup(true);
+      setIsBoardActive(false);
     }
   };
 
@@ -182,7 +180,9 @@ function Game() {
         {isFetchingBoard && (
           <div className="absolute w-screen h-screen bg-black bg-opacity-85 flex justify-center items-center">
             <div className="bg-white p-8 rounded-lg flex justify-center items-center flex-col">
-              <h1 className="text-gray-900 text-lg mb-4">Generating board...</h1>
+              <h1 className="text-gray-900 text-lg mb-4">
+                Generating board...
+              </h1>
             </div>
           </div>
         )}
@@ -194,11 +194,21 @@ function Game() {
             </div>
             {mode === "manual" ? (
               <div className="flex flex-col justify-center items-center">
-                <div className="m-2 font-bold text-gray-700 text-center">
-                  <p>Left Click to make a path</p>
-                  <p>Right Click to reset the path</p>
-                </div>
-                <Board board={jsonFileData.board} onWin={handleWin} />
+                {isBoardActive ? (
+                  <div className="m-2 font-bold text-gray-700 text-center">
+                    <p>Left Click a dot to make a connection</p>
+                    <p>Right Click to reset the board</p>
+                  </div>
+                ) : (
+                  <div className="m-2 font-bold text-gray-700 text-center">
+                    <p>Finished Board</p>
+                  </div>
+                )}
+                <Board
+                  board={jsonFileData.board}
+                  onWin={handleWin}
+                  isInteractive={isBoardActive}
+                />
               </div>
             ) : (
               <Board board={jsonFileData.board} onWin={handleWin} />
@@ -210,6 +220,12 @@ function Game() {
               >
                 <RiArrowGoBackFill className="m-2" /> Back to Settings
               </button>
+            </div>
+            <div className="absolute top-5 left-5 p-2 rounded-lg bg-white bg-opacity-50">
+              <h1 className="text-xl font-bold">Settings</h1>
+              <h2>Mode: {mode}</h2>
+              <h2>Level: {level}</h2>
+              <h2>Board Type: {boardType}</h2>
             </div>
           </>
         )}
@@ -304,9 +320,11 @@ function Game() {
               </button>
               <button
                 className="text-gray-500 hover:text-gray-700"
-                onClick={() => setShowWinPopup(false)}
+                onClick={() => {
+                  setShowWinPopup(false);
+                }}
               >
-                Look at the Board
+                Board and Animate Solution
               </button>
             </div>
           </div>
