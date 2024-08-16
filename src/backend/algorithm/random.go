@@ -30,14 +30,16 @@ func GenerateRandomBoard(level string) ([][]int, error) {
 	for {
 		placeStartingDot(board, rows, cols, rng)
 		fillBoard(board, rows, cols, rng)
-		if isSolvable(board) {
-			return board, nil
-		}
-		for i := range board {
-			for j := range board[i] {
-				board[i][j] = 0
-			}
-		}
+		return board, nil
+		// If the random board must be solveable
+		// if isSolvable(board) {
+		// 	return board, nil
+		// }
+		// for i := range board {
+		// 	for j := range board[i] {
+		// 		board[i][j] = 0
+		// 	}
+		// }
 	}
 }
 
