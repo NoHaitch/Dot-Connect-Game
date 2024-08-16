@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { RiArrowGoBackFill } from "react-icons/ri";
+import { TbConfetti } from "react-icons/tb";
 import PageTitle from "../components/PageTitle";
 import JSONFilePicker from "../components/JSONFilePicker";
 import Board from "../components/Board";
@@ -25,6 +26,7 @@ function Game() {
 
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [showWinPopup, setShowWinPopup] = useState(false);
+  const [newHighscore, setNewHighscore] = useState(false);
   const [score, setScore] = useState(false);
   const [showQuitConfirmation, setShowQuitConfirmation] = useState(false);
 
@@ -62,9 +64,52 @@ function Game() {
     setIsTimerActive(true);
   };
 
-  const handleWin = () => {
+  const handleWin = async () => {
     setIsTimerActive(false);
-    setShowWinPopup(true);
+    try {
+      const response = await fetch(
+        `http://localhost:8080/isHighscore?username=${username}&score=${score}&mode=${mode}&level=${level}&boardType=${boardType}`
+      );
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+
+      if (data.response) {
+        setNewHighscore(true);
+      }
+
+      await addGameHistory();
+      setShowWinPopup(true);
+    } catch (error) {
+      console.error("Error during handleWin:", error);
+      setShowWinPopup(true);
+    }
+  };
+
+  const addGameHistory = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/addGameHistory", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          score,
+          mode,
+          level,
+          boardType,
+          newHighscore,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add game history");
+      }
+    } catch (error) {
+      console.error("Error during addGameHistory:", error);
+    }
   };
 
   const handleBackToSettings = () => {
@@ -98,7 +143,7 @@ function Game() {
       <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-br from-[#5bffa0] to-[#1b0900]">
         {showGame && (
           <>
-            <div className="absolute z-[] ml-[-800px]">
+            <div className="absolute ml-[-800px]">
               <Timer isActive={isTimerActive} onTimeUpdate={handleTimeUpdate} />
             </div>
             {mode === "manual" ? (
@@ -186,14 +231,27 @@ function Game() {
 
         {showWinPopup && (
           <div className="absolute w-screen h-screen bg-black bg-opacity-85 flex justify-center items-center">
-            <div className="bg-white p-8 rounded-lg flex justify-center items-center flex-col">
-              <h1 className="text-gray-900 text-lg mb-4">You Win!</h1>
-              <h1>Score: {score} ms</h1>
+            <div className="bg-white p-8 rounded-lg flex justify-center items-center flex-col  w-[300px]">
+              <h1 className="text-black  text-2xl m-3">You Win!</h1>
+              <h1 className="text-gray-900 text-lg m-1">Score</h1>
+              <h1 className="mb-4">{score} ms</h1>
+              {newHighscore && (
+                <div className="flex flex-row m-1 justify-center text-center">
+                  <TbConfetti className="size-[16px]" />
+                  <h1 className="red">New Highscore !</h1>
+                </div>
+              )}
               <button
                 className="px-6 py-3 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-700 transition-transform duration-300 ease-in-out mb-4"
                 onClick={() => navigate("/settings")}
               >
                 Continue
+              </button>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setShowWinPopup(false)}
+              >
+                Look at the Board
               </button>
             </div>
           </div>

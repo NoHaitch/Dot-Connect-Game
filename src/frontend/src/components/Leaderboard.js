@@ -6,10 +6,14 @@ function Leaderboard() {
   const [error, setError] = useState(null);
   const [mode, setMode] = useState("manual");
   const [level, setLevel] = useState("medium");
+  const [boardType, setBoardType] = useState("custom"); // Default boardType
 
   useEffect(() => {
+    // Set boardType based on mode
+    const currentBoardType = mode === "bot" ? "custom" : boardType;
+
     // Fetch leaderboard data from the API
-    fetch(`http://localhost:8080/leaderboard?mode=${mode}&level=${level}`)
+    fetch(`http://localhost:8080/leaderboard?mode=${mode}&level=${level}&boardType=${currentBoardType}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -33,7 +37,7 @@ function Leaderboard() {
         setError("Server Error: Failed to Fetch data");
         setLoading(false);
       });
-  }, [mode, level]);
+  }, [mode, level, boardType]);
 
   if (loading) {
     return <div className="text-center text-gray-500">Loading...</div>;
@@ -69,6 +73,28 @@ function Leaderboard() {
               Manual
             </button>
           </div>
+          {mode === 'manual' && (<div className="flex space-x-3">
+            <button
+              className={`py-2 px-4 rounded w-[88px] text-center transition-transform duration-300 ease-in-out bg-gray-400 ${
+                boardType === "random"
+                  ? "text-gray-900 scale-110"
+                  : "text-gray-800 opacity-50"
+              }`}
+              onClick={() => setBoardType("random")}
+            >
+              Random
+            </button>
+            <button
+              className={`py-2 px-4 rounded w-[88px] text-center transition-transform duration-300 ease-in-out bg-gray-400 ${
+                boardType === "custom"
+                  ? "text-gray-900 scale-110"
+                  : "text-gray-800 opacity-50"
+              }`}
+              onClick={() => setBoardType("custom")}
+            >
+              Custom
+            </button>
+          </div>)}
 
           <div className="flex space-x-3">
             <button
