@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -184,37 +185,6 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"board": board})
 	})
 
-	// Solve DFS Endpoint
-	r.POST("/solvedfs", func(c *gin.Context) {
-		var requestData struct {
-			Board [][]int `json:"board"`
-		}
-
-		if err := c.BindJSON(&requestData); err != nil {
-			PrintlnRed("[Main] Invalid JSON Format")
-			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD REQUEST"})
-			return
-		}
-
-		board := requestData.Board
-
-		graph, startID := algorithm.BoardToGraph(board)
-
-		path, found := algorithm.DFS(graph, startID)
-
-		response := gin.H{
-			"found": found,
-		}
-
-		if found {
-			response["path"] = path
-		} else {
-			response["message"] = "No solution found"
-		}
-
-		c.JSON(http.StatusOK, response)
-	})
-
 	// Check if score is better than highscore
 	r.GET("/isHighscore", func(c *gin.Context) {
 		username := c.Query("username")
@@ -265,6 +235,62 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"history": history})
+	})
+
+	// Solve DFS Endpoint
+	r.POST("/solvedfs", func(c *gin.Context) {
+		var requestData struct {
+			Board [][]int `json:"board"`
+		}
+
+		if err := c.BindJSON(&requestData); err != nil {
+			PrintlnRed("[Main] Invalid JSON Format")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD REQUEST"})
+			return
+		}
+
+		board := requestData.Board
+
+		// Start timer
+		startTime := time.Now()
+
+		graph, startID := algorithm.BoardToGraph(board)
+		path, found := algorithm.DFS(graph, startID)
+
+		// End timer
+		duration := time.Since(startTime)
+
+		response := gin.H{
+			"found": found,
+			"time":  duration.Milliseconds(),
+		}
+
+		if found {
+			response["path"] = path
+		} else {
+			response["message"] = "No solution found"
+		}
+
+		c.JSON(http.StatusOK, response)
+	})
+
+	// Placeholder -- solve using other algorithm
+	r.POST("/solvexxx", func(c *gin.Context) {
+		var requestData struct {
+			Board [][]int `json:"board"`
+		}
+
+		if err := c.BindJSON(&requestData); err != nil {
+			PrintlnRed("[Main] Invalid JSON Format")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD REQUEST"})
+			return
+		}
+
+		response := gin.H{
+			"found": false,
+		}
+
+		c.JSON(http.StatusOK, response)
 	})
 
 	// Start server in a goroutine

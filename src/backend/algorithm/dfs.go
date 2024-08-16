@@ -1,19 +1,19 @@
 package algorithm
 
-// DFS algorithm for dot-connect
-func DFS(graph *Graph, startID int) ([]int, bool) {
+// DFS algorithm for dot-connect returning positions
+func DFS(graph *Graph, startID int) ([][2]int, bool) {
 	visited := make([]bool, len(graph.Nodes))
-	path := []int{}
+	var path [][2]int
 
 	// Start DFS
 	result, found := DFSRecursive(graph, startID, visited, &path)
 	return result, found
 }
 
-// Recursive DFS function
-func DFSRecursive(graph *Graph, currentID int, visited []bool, path *[]int) ([]int, bool) {
+// Recursive DFS function to return positions
+func DFSRecursive(graph *Graph, currentID int, visited []bool, path *[][2]int) ([][2]int, bool) {
 	visited[currentID] = true
-	*path = append(*path, currentID)
+	*path = append(*path, [2]int{graph.Nodes[currentID].X, graph.Nodes[currentID].Y})
 
 	// Check if all nodes are visited
 	if len(*path) == len(graph.Nodes) {
@@ -30,7 +30,7 @@ func DFSRecursive(graph *Graph, currentID int, visited []bool, path *[]int) ([]i
 		}
 	}
 
-	// backtrack
+	// Backtrack
 	visited[currentID] = false
 	*path = (*path)[:len(*path)-1]
 
