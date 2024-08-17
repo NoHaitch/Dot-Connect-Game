@@ -98,6 +98,10 @@ func main() {
 			return
 		}
 
+		if mode == "bot" {
+			boardType = "custom"
+		}
+
 		// Add game history
 		success := addGameHistory(username, mode, level, boardType, score)
 		if success {
@@ -197,6 +201,10 @@ func main() {
 			PrintlnRed("[Main] Request Failed, Empty Query")
 			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD QUERY"})
 			return
+		}
+
+		if mode == "bot" {
+			boardType = "custom"
 		}
 
 		// Convert score to integer

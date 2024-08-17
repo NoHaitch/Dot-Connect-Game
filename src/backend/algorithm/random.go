@@ -51,7 +51,7 @@ func placeStartingDot(board [][]int, rows, cols int, rng *rand.Rand) {
 
 func fillBoard(board [][]int, rows, cols int, rng *rand.Rand) {
 	numCells := rows * cols
-	numOnes := rng.Intn((numCells/4)+(numCells/6)) + (numCells / 6)
+	numOnes := numCells * 15 / 100
 
 	for i := 0; i < numOnes; i++ {
 		r := rng.Intn(rows)

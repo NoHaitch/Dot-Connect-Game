@@ -21,24 +21,24 @@ func initDB() {
 
 	// Create users table if it does not exist
 	userTableCreationSQL := `
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        bot_custom_beginner INTEGER DEFAULT 0,
-        bot_custom_easy INTEGER DEFAULT 0,
-        bot_custom_medium INTEGER DEFAULT 0,
-        bot_custom_hard INTEGER DEFAULT 0,
-        manual_random_beginner INTEGER DEFAULT 0,
-        manual_random_easy INTEGER DEFAULT 0,
-        manual_random_medium INTEGER DEFAULT 0,
-        manual_random_hard INTEGER DEFAULT 0,
-        manual_custom_beginner INTEGER DEFAULT 0,
-        manual_custom_easy INTEGER DEFAULT 0,
-        manual_custom_medium INTEGER DEFAULT 0,
-        manual_custom_hard INTEGER DEFAULT 0
-    );
-    `
+		CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT UNIQUE NOT NULL,
+			password TEXT NOT NULL,
+			bot_custom_beginner INTEGER DEFAULT NULL,
+			bot_custom_easy INTEGER DEFAULT NULL,
+			bot_custom_medium INTEGER DEFAULT NULL,
+			bot_custom_hard INTEGER DEFAULT NULL,
+			manual_random_beginner INTEGER DEFAULT NULL,
+			manual_random_easy INTEGER DEFAULT NULL,
+			manual_random_medium INTEGER DEFAULT NULL,
+			manual_random_hard INTEGER DEFAULT NULL,
+			manual_custom_beginner INTEGER DEFAULT NULL,
+			manual_custom_easy INTEGER DEFAULT NULL,
+			manual_custom_medium INTEGER DEFAULT NULL,
+			manual_custom_hard INTEGER DEFAULT NULL
+		);
+		`
 	_, err = db.Exec(userTableCreationSQL)
 	if err != nil {
 		PrintlnRed("[Main] DATABASE ERROR: " + err.Error())
@@ -46,17 +46,17 @@ func initDB() {
 
 	// Create history table if it does not exist
 	historyTableCreationSQL := `
-CREATE TABLE IF NOT EXISTS history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL,
-    mode TEXT NOT NULL,
-    level TEXT NOT NULL,
-    score INTEGER NOT NULL,
-    boardType TEXT DEFAULT NULL,
-    date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(username) REFERENCES users(username)
-);
-`
+		CREATE TABLE IF NOT EXISTS history (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		username TEXT NOT NULL,
+		mode TEXT NOT NULL,
+		level TEXT NOT NULL,
+		score INTEGER NOT NULL,
+		boardType TEXT DEFAULT NULL,
+		date DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(username) REFERENCES users(username)
+	);
+	`
 	_, err = db.Exec(historyTableCreationSQL)
 	if err != nil {
 		PrintlnRed("[Main] DATABASE ERROR: " + err.Error())
@@ -91,7 +91,7 @@ func register(username string, password string) bool {
 func updateHighscore(username string, mode string, level string, boardType string, score int) bool {
 	columnName := mode + "_" + boardType + "_" + level
 
-	_, err := db.Exec(`UPDATE users SET `+columnName+` = ? WHERE username = ? AND (`+columnName+` = 0 OR `+columnName+` > ?)`, score, username, score)
+	_, err := db.Exec(`UPDATE users SET `+columnName+` = ? WHERE username = ? AND (`+columnName+` IS NULL OR `+columnName+` > ?)`, score, username, score)
 	if err != nil {
 		PrintlnRed("[Main] Error Updating Highscore: " + err.Error())
 		return false
@@ -124,15 +124,14 @@ func addGameHistory(username string, mode string, level string, boardType string
 	return updateHighscore(username, mode, level, boardType, score)
 }
 
-// Retrieve the leaderbor (top 5 fastest users)
+// Retrieve the leaderboard (top 5 fastest users)
 func getLeaderboard(mode string, level string, boardType string) ([]map[string]interface{}, error) {
 	columnName := mode + "_" + boardType + "_" + level
-	fmt.Println(columnName)
 
 	query := `
 	SELECT username, ` + columnName + ` as bestTime
 	FROM users
-	WHERE ` + columnName + ` > 0
+	WHERE ` + columnName + ` IS NOT NULL
 	ORDER BY ` + columnName + ` ASC
 	LIMIT 5;
 	`
@@ -147,17 +146,20 @@ func getLeaderboard(mode string, level string, boardType string) ([]map[string]i
 	var leaderboard []map[string]interface{}
 	for rows.Next() {
 		var username string
-		var bestTime int
+		var bestTime sql.NullInt64
 		if err := rows.Scan(&username, &bestTime); err != nil {
 			PrintlnRed("[Database] Error scanning rows: " + err.Error())
 			return nil, err
 		}
-		leaderboard = append(leaderboard, map[string]interface{}{
-			"username":  username,
-			"highscore": bestTime,
-		})
+		if bestTime.Valid {
+			leaderboard = append(leaderboard, map[string]interface{}{
+				"username":  username,
+				"highscore": bestTime.Int64,
+			})
+		}
 	}
 
+	fmt.Println(leaderboard)
 	return leaderboard, nil
 }
 
@@ -187,7 +189,7 @@ func login(username string, password string) bool {
 func isNewHighscore(username string, mode string, level string, score int, boardType string) (bool, error) {
 	columnName := mode + "_" + boardType + "_" + level
 
-	var currentHighscore int
+	var currentHighscore *int
 	row := db.QueryRow(`SELECT `+columnName+` FROM users WHERE username = ?`, username)
 	err := row.Scan(&currentHighscore)
 	if err != nil {
@@ -200,7 +202,11 @@ func isNewHighscore(username string, mode string, level string, score int, board
 		}
 	}
 
-	if score < currentHighscore {
+	if currentHighscore == nil {
+		return true, nil
+	}
+
+	if score < *currentHighscore {
 		return true, nil
 	}
 
