@@ -1,9 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import PropTypes from "prop-types";
 
-function Timer({ isActive, onTimeUpdate = null }) {
-  const [time, setTime] = useState(0);
+const Timer = forwardRef(({ isActive, initialTime = 0, onTimeUpdate = null, onTimeChange = null }, ref) => {
+  const [time, setTime] = useState(initialTime);
   const intervalRef = useRef(null);
+
+  useEffect(() => {
+    setTime(initialTime);
+  }, [initialTime]);
 
   useEffect(() => {
     if (isActive) {
@@ -22,6 +26,18 @@ function Timer({ isActive, onTimeUpdate = null }) {
 
     return () => clearInterval(intervalRef.current);
   }, [isActive, onTimeUpdate]);
+
+  useEffect(() => {
+    if (onTimeChange) {
+      onTimeChange(time);
+    }
+  }, [time, onTimeChange]);
+
+  useImperativeHandle(ref, () => ({
+    setTimerTime: (newTime) => {
+      setTime(newTime);
+    }
+  }));
 
   const formatTime = (time) => {
     const totalMilliseconds = time;
@@ -57,18 +73,26 @@ function Timer({ isActive, onTimeUpdate = null }) {
           <span className="separator">:</span>
         </>
       )}
-      <span className="minutes text-2xl font-mono bg-white rounded-lg p-1">{minutes}</span>
+      <span className="minutes text-2xl font-mono bg-white rounded-lg p-1">
+        {minutes}
+      </span>
       <span className="separator">:</span>
-      <span className="seconds text-2xl font-mono bg-white rounded-lg p-1">{seconds}</span>
+      <span className="seconds text-2xl font-mono bg-white rounded-lg p-1">
+        {seconds}
+      </span>
       <span className="separator">.</span>
-      <span className="milliseconds text-lg font-mono w-16">{milliseconds} ms</span>
+      <span className="milliseconds text-lg font-mono w-16">
+        {milliseconds} ms
+      </span>
     </div>
   );
-}
+});
 
 Timer.propTypes = {
   isActive: PropTypes.bool.isRequired,
+  initialTime: PropTypes.number,
   onTimeUpdate: PropTypes.func,
+  onTimeChange: PropTypes.func,
 };
 
 export default Timer;

@@ -33,6 +33,7 @@ function Game() {
   const [isFetchingBoard, setIsFetchingBoard] = useState(false);
   const [isBoardActive, setIsBoardActive] = useState(false);
   const [isBotSolving, setIsBotSolving] = useState(false);
+  const [timerTime, setTimerTime] = useState(0);
 
   useEffect(() => {
     if (!username || !mode || !level) {
@@ -119,17 +120,19 @@ function Game() {
       }
 
       const data = await response.json();
-      console.log("Time:", data.time);
-      console.log("Path", data.path);
       const solution = data.path;
       for (let i = 1; i < solution.length; i++) {
         const elementId = `dot${solution[i][0]}-${solution[i][1]}`;
         const element = document.getElementById(elementId);
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 40));
         if (element) {
           element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
         }
       }
+      setIsTimerActive(false);
+      setTimerTime(data.time);
+      setScore(data.time);
+      handleWin(data.time);
     } catch (error) {
       console.error("Error during bot solution:", error);
     } finally {
@@ -137,16 +140,21 @@ function Game() {
     }
   };
 
-  const handleWin = async () => {
+  const handleWin = async (newScore) => {
     setIsTimerActive(false);
     setShowWinPopup(false);
-
+  
     try {
       setShowLoading(true);
-
+  
+      const finalScore = newScore !== undefined ? newScore : score;
+      console.log(finalScore);
+      
+      
       const response = await fetch(
-        `http://localhost:8080/isHighscore?username=${username}&score=${score}&mode=${mode}&level=${level}&boardType=${boardType}`
+        `http://localhost:8080/isHighscore?username=${username}&score=${finalScore}&mode=${mode}&level=${level}&boardType=${boardType}`
       );
+      console.log(response);
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -156,8 +164,8 @@ function Game() {
       } else {
         setNewHighscore(false);
       }
-
-      await addGameHistory();
+  
+      await addGameHistory(finalScore);
     } catch (error) {
       console.error("Error during handleWin:", error);
       setNewHighscore(false);
@@ -167,8 +175,8 @@ function Game() {
       setIsBoardActive(false);
     }
   };
-
-  const addGameHistory = async () => {
+  
+  const addGameHistory = async (finalScore) => {
     try {
       const response = await fetch("http://localhost:8080/addGameHistory", {
         method: "POST",
@@ -177,14 +185,14 @@ function Game() {
         },
         body: JSON.stringify({
           username,
-          score,
+          score: finalScore,
           mode,
           level,
           boardType,
           newHighscore,
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to add game history");
       }
@@ -214,6 +222,10 @@ function Game() {
     setScore(time);
   };
 
+  const handleTimeChange = (newTime) => {
+    setTimerTime(newTime);
+  };
+
   if (!username || !mode || !level) {
     return null;
   }
@@ -235,13 +247,36 @@ function Game() {
         {showGame && (
           <>
             <div className="absolute ml-[-800px] flex flex-col justify-center">
-              <Timer isActive={isTimerActive} onTimeUpdate={handleTimeUpdate} />
-              {mode === "bot" && (
-                <h1 className="text-xs w-[160px] text-center mt-2">
-                  Note: Live timer is not accurate to the speed of bot. After
-                  bot finished solving, the timer is changed to the accurate
-                  meassurement
-                </h1>
+              {mode === "manual" ? (
+                <Timer
+                  isActive={isTimerActive}
+                  onTimeUpdate={handleTimeUpdate}
+                  onTimeChange={handleTimeChange}
+                />
+              ) : (
+                <>
+                  {isTimerActive ? (
+                    <div>
+                      <Timer
+                        isActive={isTimerActive}
+                        onTimeUpdate={handleTimeUpdate}
+                        onTimeChange={handleTimeChange}
+                      />
+                      <h1 className="text-xs w-[160px] text-center mt-2">
+                        Note: Live timer is not accurate to the speed of bot.
+                        After bot finished solving, the timer is changed to the
+                        accurate meassurement
+                      </h1>
+                    </div>
+                  ) : (
+                    <button
+                      className="px-3 py-4 rounded-xl bg-gray-200 hover:bg-gray-300"
+                      onClick={() => setShowWinPopup(true)}
+                    >
+                      Show win popup
+                    </button>
+                  )}
+                </>
               )}
             </div>
             {mode === "manual" ? (

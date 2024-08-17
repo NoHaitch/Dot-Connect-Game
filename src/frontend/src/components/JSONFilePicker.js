@@ -16,25 +16,28 @@ const JSONFilePicker = ({ onFileSelect, level }) => {
           try {
             const json = JSON.parse(e.target.result);
             if (validateJSON(json, level)) {
-              // Check if the board is solvable
-              const response = await fetch('http://localhost:8080/solvedfs', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ board: json.board }),
-              });
+              // // Check if the board is solvable
+              // const response = await fetch('http://localhost:8080/solvedfs', {
+              //   method: 'POST',
+              //   headers: {
+              //     'Content-Type': 'application/json',
+              //   },
+              //   body: JSON.stringify({ board: json.board }),
+              // });
 
-              if (response.ok) {
-                const data = await response.json();
-                if (data.found) {
-                  onFileSelect(json);
-                } else {
-                  setError("The board is not solvable.");
-                }
-              } else {
-                setError("Error checking solvability.");
-              }
+              // if (response.ok) {
+              //   const data = await response.json();
+              //   if (data.found) {
+              //     onFileSelect(json);
+              //   } else {
+              //     setError("The board is not solvable.");
+              //   }
+              //   onFileSelect(json);
+              // } else {
+              //   setError("Error checking solvability.");
+              // }
+
+              onFileSelect(json);
             } else {
               setError("Invalid JSON format for this level.");
             }
@@ -70,7 +73,7 @@ const JSONFilePicker = ({ onFileSelect, level }) => {
     let countOfTwos = 0;
 
     for (const row of json.board) {
-      if (!Array.isArray(row) || row.length !== cols) {
+      if (!Array.isArray(row)) {
         return false;
       }
 

@@ -194,18 +194,12 @@ const Board = ({ board, onWin, isInteractive, isBotMode }) => {
     }
 
     if (animationPath.length === 0) {
-      console.log("TEST");
-      
       setAnimationPath(path);
       await new Promise((resolve) => setTimeout(resolve, 100));
-      const rightClickEvent = new MouseEvent("contextmenu", {
-        bubbles: true,
-        cancelable: true,
-        view: window,
-        button: 2,
-      });
 
-      document.getElementById("animate-button").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      document
+        .getElementById("animate-button")
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
     }
 
     setAnimating(true);
