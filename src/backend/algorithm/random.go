@@ -65,7 +65,11 @@ func fillBoard(board [][]int, rows, cols int, rng *rand.Rand) {
 }
 
 func isSolvable(board [][]int) bool {
-	graph, startID := BoardToGraph(board)
+	graph, startID, err := BoardToGraph(board)
+	if err != nil {
+		return false
+	}
+
 	_, found := DFS(graph, startID)
 	return found
 }

@@ -36,7 +36,7 @@ func (g *Graph) AddEdge(from, to int) {
 }
 
 // Convert a board to a Graph
-func BoardToGraph(board [][]int) (*Graph, int) {
+func BoardToGraph(board [][]int) (*Graph, int, error) {
 	rows := len(board)
 	cols := len(board[0])
 	graph := NewGraph()
@@ -86,11 +86,37 @@ func BoardToGraph(board [][]int) (*Graph, int) {
 		}
 	}
 
-	return graph, startID
+	// Check for isolated nodes
+	for nodeID := range graph.Nodes {
+		if len(graph.Edges[nodeID]) == 0 {
+			return nil, -1, fmt.Errorf("isolated node detected with ID %d", nodeID)
+		}
+	}
+
+	countEndPoint := 0
+	for nodeID, edges := range graph.Edges {
+		if nodeID != startID && len(edges) == 1 {
+			countEndPoint++
+		}
+		if countEndPoint > 1 {
+			break
+		}
+	}
+
+	if countEndPoint > 1 {
+		return nil, -1, fmt.Errorf("amount of endpoint > 1")
+	}
+
+	return graph, startID, nil
 }
 
 // Print Graph for Debugging
 func (g *Graph) PrintGraph() {
+	if g == nil {
+		fmt.Println("Graph is nil")
+		return
+	}
+
 	fmt.Println("Nodes:")
 	for _, node := range g.Nodes {
 		fmt.Printf("ID: %d, Position: (%d, %d)\n", node.ID, node.X, node.Y)

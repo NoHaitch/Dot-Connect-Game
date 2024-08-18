@@ -159,7 +159,6 @@ func getLeaderboard(mode string, level string, boardType string) ([]map[string]i
 		}
 	}
 
-	fmt.Println(leaderboard)
 	return leaderboard, nil
 }
 

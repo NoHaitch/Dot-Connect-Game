@@ -262,24 +262,34 @@ func main() {
 		// Start timer
 		startTime := time.Now()
 
-		graph, startID := algorithm.BoardToGraph(board)
-		path, found := algorithm.DFS(graph, startID)
+		graph, startID, err := algorithm.BoardToGraph(board)
+		if err != nil {
+			duration := time.Since(startTime)
 
-		// End timer
-		duration := time.Since(startTime)
+			response := gin.H{
+				"found": false,
+				"time":  duration.Milliseconds(),
+			}
 
-		response := gin.H{
-			"found": found,
-			"time":  duration.Milliseconds(),
-		}
-
-		if found {
-			response["path"] = path
+			c.JSON(http.StatusOK, response)
 		} else {
-			response["message"] = "No solution found"
-		}
+			path, found := algorithm.DFS(graph, startID)
 
-		c.JSON(http.StatusOK, response)
+			duration := time.Since(startTime)
+
+			response := gin.H{
+				"found": found,
+				"time":  duration.Milliseconds(),
+			}
+
+			if found {
+				response["path"] = path
+			} else {
+				response["message"] = "No solution found"
+			}
+
+			c.JSON(http.StatusOK, response)
+		}
 	})
 
 	// Placeholder -- solve using other algorithm
