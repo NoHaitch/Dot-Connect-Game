@@ -26,6 +26,8 @@ function Game() {
 
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [showWinPopup, setShowWinPopup] = useState(false);
+  const [showNoSolutionPopup, setShowNoSolutionPopup] = useState(false);
+  const [noSolution, setNoSolution] = useState(false);
   const [newHighscore, setNewHighscore] = useState(false);
   const [score, setScore] = useState(false);
   const [showQuitConfirmation, setShowQuitConfirmation] = useState(false);
@@ -120,21 +122,29 @@ function Game() {
       }
 
       const data = await response.json();
-      const solution = data.path;
-      for (let i = 1; i < solution.length; i++) {
-        const elementId = `dot${solution[i][0]}-${solution[i][1]}`;
-        const element = document.getElementById(elementId);
-        await new Promise((resolve) => setTimeout(resolve, 40));
-        if (element) {
-          element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      if (data.found) {
+        const solution = data.path;
+        for (let i = 1; i < solution.length; i++) {
+          const elementId = `dot${solution[i][0]}-${solution[i][1]}`;
+          const element = document.getElementById(elementId);
+          await new Promise((resolve) => setTimeout(resolve, 40));
+          if (element) {
+            element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+          }
         }
+        setIsTimerActive(false);
+        setTimerTime(data.time);
+        setScore(data.time);
+        handleWin(data.time);
+      } else {
+        setIsTimerActive(false);
+        setTimerTime(data.time);
+        setScore(data.time);
+        handleNoSolution(data.time);
       }
-      setIsTimerActive(false);
-      setTimerTime(data.time);
-      setScore(data.time);
-      handleWin(data.time);
     } catch (error) {
       console.error("Error during bot solution:", error);
+      setIsTimerActive(false);
     } finally {
       setIsBotSolving(false);
     }
@@ -143,18 +153,15 @@ function Game() {
   const handleWin = async (newScore) => {
     setIsTimerActive(false);
     setShowWinPopup(false);
-  
+
     try {
       setShowLoading(true);
-  
+
       const finalScore = newScore !== undefined ? newScore : score;
-      console.log(finalScore);
-      
-      
+
       const response = await fetch(
         `http://localhost:8080/isHighscore?username=${username}&score=${finalScore}&mode=${mode}&level=${level}&boardType=${boardType}`
       );
-      console.log(response);
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -164,7 +171,7 @@ function Game() {
       } else {
         setNewHighscore(false);
       }
-  
+
       await addGameHistory(finalScore);
     } catch (error) {
       console.error("Error during handleWin:", error);
@@ -175,7 +182,12 @@ function Game() {
       setIsBoardActive(false);
     }
   };
-  
+
+  const handleNoSolution = () => {
+    setNoSolution(true);
+    setShowNoSolutionPopup(true);
+  };
+
   const addGameHistory = async (finalScore) => {
     try {
       const response = await fetch("http://localhost:8080/addGameHistory", {
@@ -192,7 +204,7 @@ function Game() {
           newHighscore,
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to add game history");
       }
@@ -269,12 +281,23 @@ function Game() {
                       </h1>
                     </div>
                   ) : (
-                    <button
-                      className="px-3 py-4 rounded-xl bg-gray-200 hover:bg-gray-300"
-                      onClick={() => setShowWinPopup(true)}
-                    >
-                      Show win popup
-                    </button>
+                    <>
+                      {noSolution ? (
+                        <button
+                          className="px-3 py-4 rounded-xl bg-gray-200 hover:bg-gray-300"
+                          onClick={() => setShowNoSolutionPopup(true)}
+                        >
+                          Show No Solution popup
+                        </button>
+                      ) : (
+                        <button
+                          className="px-3 py-4 rounded-xl bg-gray-200 hover:bg-gray-300"
+                          onClick={() => setShowWinPopup(true)}
+                        >
+                          Show win popup
+                        </button>
+                      )}
+                    </>
                   )}
                 </>
               )}
@@ -319,7 +342,7 @@ function Game() {
                   <div className="m-2 font-bold text-gray-700 text-center flex items-center justify-center">
                     <svg
                       aria-hidden="true"
-                      class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+                      className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
                       viewBox="0 0 100 101"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -461,6 +484,30 @@ function Game() {
                 }}
               >
                 Board and Animate Solution
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showNoSolutionPopup && (
+          <div className="absolute w-screen h-screen bg-black bg-opacity-85 flex justify-center items-center">
+            <div className="bg-white p-8 rounded-lg flex justify-center items-center flex-col  w-[300px]">
+              <h1 className="text-black  text-2xl m-3">No Solution Found!</h1>
+              <h1 className="text-gray-900 text-lg m-1">Time</h1>
+              <h1 className="mb-4">{score} ms</h1>
+              <button
+                className="px-6 py-3 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-700 transition-transform duration-300 ease-in-out mb-4"
+                onClick={() => navigate("/settings")}
+              >
+                Continue
+              </button>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => {
+                  setShowNoSolutionPopup(false);
+                }}
+              >
+                Look at Board
               </button>
             </div>
           </div>
