@@ -414,13 +414,23 @@ function Game() {
                       </button>
                       <button
                         className={`py-2 px-4 rounded w-[96px] transition-transform duration-300 ease-in-out bg-lime-400 ${
-                          algorithm === "other"
+                          algorithm === "bf"
                             ? "text-gray-900 scale-110"
                             : "text-gray-800 opacity-50"
                         }`}
-                        onClick={() => setAlgorithm("other")}
+                        onClick={() => setAlgorithm("bf")}
                       >
-                        Other
+                        Brute Force
+                      </button>
+                      <button
+                        className={`py-2 px-4 rounded w-[96px] transition-transform duration-300 ease-in-out bg-lime-400 ${
+                          algorithm === "gbfs"
+                            ? "text-gray-900 scale-110"
+                            : "text-gray-800 opacity-50"
+                        }`}
+                        onClick={() => setAlgorithm("gbfs")}
+                      >
+                        Greedy
                       </button>
                     </div>
                   </div>
