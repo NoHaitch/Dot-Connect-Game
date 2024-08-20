@@ -1,12 +1,6 @@
 package algorithm
 
-// Rules:
-// IF there is isolated dots --> no solution
-// If there is a 2 dots with only one connection --> no solution
-// If there is a 2x3 block with only 2 exits --> no solution
-
-// Pre Check the board to check if it is solvable or not.
-// Return starting dot, amount of usable dot, and solvable or not
+// PreCheckBoard checks if the board is solvable or not.
 func PreCheckBoard(board [][]int) ([2]int, int, bool) {
 	rows := len(board)
 	cols := len(board[0])
@@ -27,20 +21,19 @@ func PreCheckBoard(board [][]int) ([2]int, int, bool) {
 				if r+1 < rows && (board[r+1][c] == 0 || board[r+1][c] == 2) {
 					connection++
 				}
-				if r-1 > 0 && (board[r-1][c] == 0 || board[r-1][c] == 2) {
+				if r-1 >= 0 && (board[r-1][c] == 0 || board[r-1][c] == 2) {
 					connection++
 				}
 				if c+1 < cols && (board[r][c+1] == 0 || board[r][c+1] == 2) {
 					connection++
 				}
-				if c-1 > 0 && (board[r][c-1] == 0 || board[r][c-1] == 2) {
+				if c-1 >= 0 && (board[r][c-1] == 0 || board[r][c-1] == 2) {
 					connection++
 				}
 				if connection == 0 {
 					return [2]int{0, 0}, 0, false
 				} else if connection == 1 {
 					countEndPoint++
-
 					if countEndPoint > 1 {
 						return [2]int{0, 0}, 0, false
 					}
@@ -51,3 +44,11 @@ func PreCheckBoard(board [][]int) ([2]int, int, bool) {
 
 	return startPoint, usableDotCount, true
 }
+
+// MainAlgo algorithm
+// Not Finished
+// Ideas:
+// - bruteforce/dfs added concurentcy
+// - Group the dots into blocks (n x m)
+// - Have a template of how to solve (n x m)
+// - Avoid making more endpoints (dots with 1 connection)
