@@ -423,15 +423,25 @@ function Game() {
                         Brute Force
                       </button>
                       <button
-                        className={`py-2 px-4 rounded w-[96px] transition-transform duration-300 ease-in-out bg-lime-400 ${
-                          algorithm === "gbfs"
+                        className={`py-2 px-4 rounded w-[96px] transition-transform duration-300 ease-in-out bg-emerald-400 ${
+                          algorithm === "greed"
                             ? "text-gray-900 scale-110"
                             : "text-gray-800 opacity-50"
                         }`}
-                        onClick={() => setAlgorithm("gbfs")}
+                        onClick={() => setAlgorithm("greed")}
                       >
                         Greedy
                       </button>
+                      {/* <button
+                        className={`py-2 px-4 rounded w-[96px] transition-transform duration-300 ease-in-out bg-pink-400 ${
+                          algorithm === "main"
+                            ? "text-gray-900 scale-110"
+                            : "text-gray-800 opacity-50"
+                        }`}
+                        onClick={() => setAlgorithm("main")}
+                      >
+                        Main Algorithm
+                      </button> */}
                     </div>
                   </div>
                 )}
