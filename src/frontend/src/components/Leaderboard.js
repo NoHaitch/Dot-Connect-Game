@@ -4,9 +4,9 @@ function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [mode, setMode] = useState("manual");
-  const [level, setLevel] = useState("medium");
-  const [boardType, setBoardType] = useState("custom");
+  const [mode, setMode] = useState("bot");
+  const [level, setLevel] = useState("beginner");
+  const [boardType, setBoardType] = useState("random");
 
   useEffect(() => {
     // Set boardType based on mode
