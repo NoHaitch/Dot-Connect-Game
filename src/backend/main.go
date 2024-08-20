@@ -292,8 +292,8 @@ func main() {
 		}
 	})
 
-	// Placeholder -- solve using other algorithm
-	r.POST("/solvexxx", func(c *gin.Context) {
+	// Solve Brute Force Endpoint
+	r.POST("/solvebf", func(c *gin.Context) {
 		var requestData struct {
 			Board [][]int `json:"board"`
 		}
@@ -304,11 +304,65 @@ func main() {
 			return
 		}
 
+		board := requestData.Board
+
+		// Start timer
+		startTime := time.Now()
+
+		graph, startID, _ := algorithm.BoardToGraph(board)
+		path, found := algorithm.DFS(graph, startID)
+
+		duration := time.Since(startTime)
+
 		response := gin.H{
-			"found": false,
+			"found": found,
+			"time":  duration.Milliseconds(),
+		}
+
+		if found {
+			response["path"] = path
+		} else {
+			response["message"] = "No solution found"
 		}
 
 		c.JSON(http.StatusOK, response)
+
+	})
+
+	// Solve Brute Force Endpoint
+	r.POST("/solvegreed", func(c *gin.Context) {
+		var requestData struct {
+			Board [][]int `json:"board"`
+		}
+
+		if err := c.BindJSON(&requestData); err != nil {
+			PrintlnRed("[Main] Invalid JSON Format")
+			c.JSON(http.StatusBadRequest, gin.H{"response": "BAD REQUEST"})
+			return
+		}
+
+		board := requestData.Board
+
+		// Start timer
+		startTime := time.Now()
+
+		path, found := algorithm.Greedy(board)
+
+		duration := time.Since(startTime)
+
+		response := gin.H{
+			"found": found,
+			"time":  duration.Milliseconds(),
+		}
+
+		if found {
+			response["path"] = path
+		} else {
+			response["message"] = "No solution found"
+		}
+
+		c.JSON(http.StatusOK, response)
+
 	})
 
 	// Start server in a goroutine

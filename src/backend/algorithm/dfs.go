@@ -1,16 +1,19 @@
 package algorithm
 
-// DFS algorithm for dot-connect returning positions
+import "fmt"
+
+// DFS algorithm
 func DFS(graph *Graph, startID int) ([][2]int, bool) {
+	fmt.Println("[DFS] starting algorithm")
+
 	visited := make([]bool, len(graph.Nodes))
 	var path [][2]int
 
-	// Start DFS
 	result, found := DFSRecursive(graph, startID, visited, &path)
+
 	return result, found
 }
 
-// Recursive DFS function to return positions
 func DFSRecursive(graph *Graph, currentID int, visited []bool, path *[][2]int) ([][2]int, bool) {
 	visited[currentID] = true
 	*path = append(*path, [2]int{graph.Nodes[currentID].X, graph.Nodes[currentID].Y})

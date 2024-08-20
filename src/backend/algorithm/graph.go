@@ -86,25 +86,18 @@ func BoardToGraph(board [][]int) (*Graph, int, error) {
 		}
 	}
 
-	// Check for isolated nodes
+	// Check for isolated nodes or two or more endpoint (causes unsolvable)
+	countEndPoint := 0
 	for nodeID := range graph.Nodes {
 		if len(graph.Edges[nodeID]) == 0 {
 			return nil, -1, fmt.Errorf("isolated node detected with ID %d", nodeID)
 		}
-	}
-
-	countEndPoint := 0
-	for nodeID, edges := range graph.Edges {
-		if nodeID != startID && len(edges) == 1 {
+		if len(graph.Edges[nodeID]) == 1 {
 			countEndPoint++
+			if countEndPoint > 1 {
+				return nil, -1, fmt.Errorf("amount of endpoint > 1")
+			}
 		}
-		if countEndPoint > 1 {
-			break
-		}
-	}
-
-	if countEndPoint > 1 {
-		return nil, -1, fmt.Errorf("amount of endpoint > 1")
 	}
 
 	return graph, startID, nil
