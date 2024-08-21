@@ -92,7 +92,7 @@ func BoardToGraph(board [][]int) (*Graph, int, error) {
 		if len(graph.Edges[nodeID]) == 0 {
 			return nil, -1, fmt.Errorf("isolated node detected with ID %d", nodeID)
 		}
-		if len(graph.Edges[nodeID]) == 1 {
+		if len(graph.Edges[nodeID]) == 1 && nodeID != startID {
 			countEndPoint++
 			if countEndPoint > 1 {
 				return nil, -1, fmt.Errorf("amount of endpoint > 1")
